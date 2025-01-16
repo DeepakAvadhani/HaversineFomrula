@@ -3,7 +3,6 @@ const Redis = require("ioredis");
 const redis = new Redis({
   host: 'localhost',
   port: 6379,
-  password: 'your_password',
   db: 0
 });
 

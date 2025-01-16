@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const zoneController = require('../controllers/zone.controller');
+const zoneController = require("../controllers/zone.controller");
+const zoneinfo = require("../controllers/getZoneInfo");
 
-// POST route to get zone info
-router.post('/zone-info', zoneController.getZoneInfo);
-
+router.post("/zone-info", zoneController.getZoneInfo);
+router.post("/getzoneinfo", zoneinfo.getNearestDeliveryAgents);
 module.exports = router;
