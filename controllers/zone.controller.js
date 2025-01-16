@@ -1,4 +1,4 @@
-const { sequelize } = require("../models"); // Adjust the path to your models
+const { sequelize } = require("../models");
 const { QueryTypes } = require("sequelize");
 
 exports.getZoneInfo = async (req, res) => {
@@ -39,7 +39,7 @@ exports.getZoneInfo = async (req, res) => {
         .json({ message: "No zone found for the given coordinates." });
     }
 
-    res.json(result[0]); // Return the first matching zone with distance
+    res.json(result[0]);
   } catch (error) {
     console.error("Error fetching zone info:", error);
     res.status(500).json({ error: "Internal Server Error" });
