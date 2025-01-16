@@ -20,11 +20,11 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       latitude: {
-        type: DataTypes.FLOAT, // Stores the latitude
+        type: DataTypes.FLOAT,
         allowNull: false,
       },
       longitude: {
-        type: DataTypes.FLOAT, // Stores the longitude
+        type: DataTypes.FLOAT,
         allowNull: false,
       },
     },
