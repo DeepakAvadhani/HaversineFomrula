@@ -13,7 +13,7 @@ exports.getNearestDeliveryAgents = async (req, res) => {
   }
 
   try {
-    const deliveryAgents = await redis.lrange("delivery_agents", 0, -1); // Adjust key accordingly
+    const deliveryAgents = await redis.lrange("delivery_agents", 0, -1); 
 
     const agentLocations = deliveryAgents.map(agent => JSON.parse(agent));
     
