@@ -19,8 +19,12 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      coordinates: {
-        type: DataTypes.GEOMETRY('POINT', 32643), // Updated SRID to 32643
+      latitude: {
+        type: DataTypes.FLOAT, // Stores the latitude
+        allowNull: false,
+      },
+      longitude: {
+        type: DataTypes.FLOAT, // Stores the longitude
         allowNull: false,
       },
     },
