@@ -14,6 +14,11 @@ module.exports = (sequelize) => {
       zone_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+          model: 'map',
+          key: 'gid',
+          as:'zone'
+        },
       },
       zone_name: {
         type: DataTypes.STRING,
