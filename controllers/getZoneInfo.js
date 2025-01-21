@@ -20,7 +20,7 @@ exports.getNearestDeliveryAgents = async (req, res) => {
         return { ...agent, distance };
       })
       .filter(agent => {
-        return agent.distance < 1000;
+        return agent.distance < 5000;
       });
 
     const nearestAgents = distances.sort((a, b) => a.distance - b.distance);
