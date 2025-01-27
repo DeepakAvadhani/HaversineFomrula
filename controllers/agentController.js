@@ -187,7 +187,7 @@ exports.getSortedAgents = async (req, res) => {
           console.log(
             `Agent Timestamp: ${timestamp}, Current Time: ${currentTime}, Difference: ${currentTime - timestamp}`
           );
-          return currentTime - timestamp <= 10 * 1000;
+          return currentTime - timestamp <= 30 * 1000;
         } catch (err) {
           console.error("Error parsing agent data:", err);
           return false;
