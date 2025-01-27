@@ -163,7 +163,6 @@ exports.getSortedAgents = async (req, res) => {
 */
 
 //Sorting agents based on the distance and timestamp
-
 exports.getSortedAgents = async (req, res) => {
   const { shopLat, shopLng } = req.query;
   const redisClient = req.app.locals.redisClient;
@@ -173,18 +172,14 @@ exports.getSortedAgents = async (req, res) => {
       .status(400)
       .send("Invalid request. Provide shopLat and shopLng.");
   }
-
   try {
     const agents = await redisClient.hGetAll("delivery_agents");
     if (!agents || Object.keys(agents).length === 0) {
       return res.status(404).send("No agents available.");
     }
-
     const currentTime = Date.now();
     console.log("All agents from Redis:", agents);
-
-    const DISTANCE_THRESHOLD = 1000; // Define how "close" is, e.g., 1000 meters (1 km)
-
+    const DISTANCE_THRESHOLD = 1000;
     const distancePromises = Object.entries(agents)
       .filter(([_, agentData]) => {
         try {
@@ -192,28 +187,25 @@ exports.getSortedAgents = async (req, res) => {
           console.log(
             `Agent Timestamp: ${timestamp}, Current Time: ${currentTime}, Difference: ${currentTime - timestamp}`
           );
-          return currentTime - timestamp <= 10 * 1000; // Updated within 10 seconds
+          return currentTime - timestamp <= 10 * 1000;
         } catch (err) {
           console.error("Error parsing agent data:", err);
-          return false; // Skip if parsing fails
+          return false;
         }
       })
       .map(async ([agentId, agentData]) => {
         const { location } = JSON.parse(agentData);
-
         const response = await axios.post(DISTANCE_API_URL, {
           startLat: shopLat,
           startLng: shopLng,
           latitude: location.lat,
           longitude: location.lng,
         });
-
         const distanceElement = response.data.rows[0].elements[0];
 
         if (distanceElement.status !== "OK") {
           throw new Error(`Failed to calculate distance for agent ${agentId}`);
         }
-
         return {
           agentId,
           distance: distanceElement.distance.value,
@@ -223,17 +215,11 @@ exports.getSortedAgents = async (req, res) => {
           location,
         };
       });
-
     const distances = await Promise.all(distancePromises);
-
-    // Sort by distance
     distances.sort((a, b) => a.distance - b.distance);
-
-    // Filter agents that are within the distance threshold
     const closeAgents = distances.filter(
       (agent) => agent.distance <= DISTANCE_THRESHOLD
     );
-
     res.json(closeAgents);
   } catch (error) {
     console.error("Error calculating distances:", error);
