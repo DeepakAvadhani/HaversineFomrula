@@ -11,22 +11,21 @@ exports.getNearestDeliveryAgents = async (req, res) => {
   }
 
   try {
-    const deliveryAgents = await redis.lrange("delivery_agents", 0, -1); 
+    const deliveryAgents = await redis.lrange("delivery_agents", 0, -1);
     const agentLocations = deliveryAgents.map(agent => JSON.parse(agent));
 
     const distances = agentLocations
+      .filter(agent => agent.status === "free")
       .map(agent => {
         const distance = calculateDistance(shopLatitude, shopLongitude, agent.latitude, agent.longitude);
         return { ...agent, distance };
       })
-      .filter(agent => {
-        return agent.distance < 5000;
-      });
+      .filter(agent => agent.distance < 5000);
 
     const nearestAgents = distances.sort((a, b) => a.distance - b.distance);
 
     if (nearestAgents.length === 0) {
-      return res.status(404).json({ message: "No delivery agents found near the shop." });
+      return res.status(404).json({ message: "No free delivery agents found near the shop." });
     }
 
     const numberOfAgentsToReturn = 3;
@@ -51,4 +50,4 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 
   const distance = R * c;
   return distance;
-};
+};  

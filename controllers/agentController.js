@@ -7,26 +7,27 @@ const DISTANCE_API_URL = "http://127.0.0.1:3000/api/get-address"; // Replace wit
  */
 exports.updateLocation = async (req, res) => {
   console.log("Request received:", req.body);
-  const { agentId, latitude, longitude } = req.body;
+  const { agentId, latitude, longitude, status } = req.body;
   const redisClient = req.app.locals.redisClient;
-  if (!agentId || !latitude || !longitude) {
-    console.error("Invalid request. Missing agentId, latitude, or longitude.");
+  if (!agentId || !latitude || !longitude || !status) {
+    console.error("Invalid request. Missing agentId, latitude, longitude, or status.");
     return res
       .status(400)
-      .send("Invalid request. Provide agentId, latitude, and longitude.");
+      .send("Invalid request. Provide agentId, latitude, longitude, and status.");
   }
   const location = { lat: latitude, lng: longitude };
   const timestamp = Date.now();
-  const agentData = JSON.stringify({ location, timestamp });
+  const agentData = JSON.stringify({ location, timestamp, status });
   try {
-    await redisClient.hSet("delivery_agents", agentId, agentData);
-    console.log(`Agent ${agentId} location updated successfully.`);
-    res.status(200).send("Location updated successfully.");
+    await redisClient.hset("delivery_agents", agentId, agentData);
+    console.log(`Agent ${agentId} location updated with status: ${status}`);
+    res.status(200).send("Location and status updated successfully.");
   } catch (err) {
     console.error("Error storing agent data in Redis:", err);
     res.status(500).send("Failed to store location.");
   }
 };
+
 
 /**
  * Retrieves delivery agents sorted by distance from a given shop.
