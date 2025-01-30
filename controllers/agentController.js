@@ -174,7 +174,7 @@ exports.getSortedAgents = async (req, res) => {
       .send("Invalid request. Provide shopLat and shopLng.");
   }
   try {
-    const agents = await redisClient.hGetAll("delivery_agents");
+    const agents = await redisClient.hgetall("delivery_agents");
     if (!agents || Object.keys(agents).length === 0) {
       return res.status(404).send("No agents available.");
     }
