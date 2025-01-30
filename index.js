@@ -7,7 +7,7 @@ const zoneRoutes = require("./routes/zoneCoordinate.routes");
 const agentRoutes = require("./routes/agentRoutes");
 const productRoutes = require("./routes/productRoutes");
 const userRoutes = require("./routes/userRoutes");
-
+const notificationRoutes = require("./routes/notificationRoutes");
 const app = express();
 const PORT = config.port1;
 
@@ -28,3 +28,4 @@ app.use("/api/delivery", zoneRoutes);
 app.use("/api/delivery", agentRoutes);
 app.use("/api/delivery", productRoutes);
 app.use("/api/delivery", userRoutes);
+app.use("/api/delivery", notificationRoutes);
