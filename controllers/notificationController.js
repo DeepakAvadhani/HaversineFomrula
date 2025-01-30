@@ -35,24 +35,31 @@ exports.sendNotification = async (req, res) => {
   const { agent_id, title, body, data } = req.body;
   try {
     const tokens = await getUserTokens(agent_id);
-    const tokenList = tokens.map((t) => t.token);
-
-    if (tokenList.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "No device tokens found for user" });
+    console.log("Found tokens:", tokens);
+    if (!tokens.length) {
+      return res.status(400).json({ message: "No device tokens found for user" });
     }
-
-    await sendPushNotification(tokenList, title, body, data);
-    res.status(200).json({ message: "Notification sent successfully" });
+    const messages = tokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title,
+      body,
+      data: data || {}
+    }));
+    console.log("Sending messages:", messages);
+    const result = await sendPushNotification(messages);
+    res.status(200).json({ 
+      message: "Notification sent successfully",
+      result 
+    });
   } catch (error) {
+    console.error("Error sending notification:", error);
     res.status(500).json({ error: "Failed to send notification" });
   }
 };
 
 exports.assignOrder = async (req, res) => {
   const { orderId, shopLat, shopLng } = req.body;
-
   try {
     const agents = await redisClient.hgetall("delivery_agents");
     let agentTokens = [];
@@ -66,17 +73,26 @@ exports.assignOrder = async (req, res) => {
     if (agentTokens.length === 0) {
       return res.status(404).json({ message: "No available agents" });
     }
-    const messages = agentTokens.map((token) => ({
+    const messages = agentTokens.map(token => ({
       to: token,
       sound: "default",
       title: "New Delivery Request!",
       body: "Tap to accept or decline.",
-      data: { orderId, shopLat, shopLng },
+      data: { 
+        orderId, 
+        shopLat, 
+        shopLng,
+        type: 'NEW_ORDER'
+      }
     }));
-    await sendPushNotification(messages);
-    res
-      .status(200)
-      .json({ message: "Notifications sent to available agents." });
+    console.log("Sending messages to agents:", messages);
+    const result = await sendPushNotification(messages);
+
+    res.status(200).json({ 
+      message: "Notifications sent to available agents.",
+      sentTo: agentTokens.length,
+      result
+    });
   } catch (error) {
     console.error("Error sending notifications:", error);
     res.status(500).json({ error: "Failed to notify agents" });
@@ -87,9 +103,10 @@ const getUserTokens = async (agentId) => {
   try {
     const tokens = await devicetoken.findAll({
       where: { agent_id: agentId },
-      attributes: ["token"],
+      attributes: ['token'],
+      raw: true,
     });
-    return tokens.map((t) => t.token);
+    return tokens.map(t => t.token);
   } catch (error) {
     console.error("Error fetching user tokens:", error);
     return [];
