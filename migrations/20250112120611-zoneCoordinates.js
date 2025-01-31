@@ -18,11 +18,11 @@ module.exports = {
         allowNull: true,
       },
       latitude: {
-        type: Sequelize.FLOAT, // Latitude column
+        type: Sequelize.FLOAT,
         allowNull: false,
       },
       longitude: {
-        type: Sequelize.FLOAT, // Longitude column
+        type: Sequelize.FLOAT,
         allowNull: false,
       },
     });
