@@ -28,7 +28,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       status: {
-        type: Sequelize.ENUM("pending", "accepted", "rejected"),
+        type: Sequelize.ENUM("pending", "accepted", "rejected","delivered"),
         allowNull: false,
         defaultValue: "pending",
       },
