@@ -9,19 +9,37 @@ exports.updateLocation = async (req, res) => {
   console.log("Request received:", req.body);
   const { agentId, latitude, longitude, status } = req.body;
   const redisClient = req.app.locals.redisClient;
-  if (!agentId || !latitude || !longitude || !status) {
-    console.error("Invalid request. Missing agentId, latitude, longitude, or status.");
+  if (!agentId || !latitude || !longitude) {
+    console.error("Invalid request. Missing agentId, latitude, or longitude.");
     return res
       .status(400)
-      .send("Invalid request. Provide agentId, latitude, longitude, and status.");
+      .send("Invalid request. Provide agentId, latitude, and longitude.");
   }
-  const location = { lat: latitude, lng: longitude };
-  const timestamp = Date.now();
-  const agentData = JSON.stringify({ location, timestamp, status });
   try {
+    const existingData = await redisClient.hget("delivery_agents", agentId);
+    let currentStatus = 'free';
+    if (existingData) {
+      const parsedData = JSON.parse(existingData);
+      currentStatus = parsedData.status || 'free';
+    }
+    const finalStatus = status || currentStatus;
+
+    const location = { lat: latitude, lng: longitude };
+    const timestamp = Date.now();
+    const agentData = JSON.stringify({ 
+      location, 
+      timestamp, 
+      status: finalStatus,
+      lastStatusUpdate: timestamp
+    });
+
     await redisClient.hset("delivery_agents", agentId, agentData);
-    console.log(`Agent ${agentId} location updated with status: ${status}`);
-    res.status(200).send("Location and status updated successfully.");
+    console.log(`Agent ${agentId} location updated with status: ${finalStatus}`);
+    
+    res.status(200).json({
+      message: "Location and status updated successfully.",
+      currentStatus: finalStatus
+    });
   } catch (err) {
     console.error("Error storing agent data in Redis:", err);
     res.status(500).send("Failed to store location.");

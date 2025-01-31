@@ -1,18 +1,20 @@
 const { sendPushNotification } = require("../util/Expo");
+const { orderAssignment } = require("../models");
 const redisClient = require("../config/redisConfig");
-const {devicetoken} = require("../models");
+const { devicetoken } = require("../models");
+
 exports.saveDeviceToken = async (req, res) => {
   console.log("Received request:", req.body);
 
-  const { agent_id, token } = req.body;
+  const { user_id, token } = req.body;
 
-  if (!agent_id || !token) {
-    console.log("Missing fields:", { agent_id, token });
-    return res.status(400).json({ error: "agent_id and token are required" });
+  if (!user_id || !token) {
+    console.log("Missing fields:", { user_id, token });
+    return res.status(400).json({ error: "user_id and token are required" });
   }
 
   try {
-    const savedToken = await registerDeviceToken(agent_id, token);
+    const savedToken = await registerDeviceToken(user_id, token);
     console.log("Saved token:", savedToken);
     res.status(200).json({ message: "Token registered successfully" });
   } catch (error) {
@@ -21,9 +23,9 @@ exports.saveDeviceToken = async (req, res) => {
   }
 };
 
-const registerDeviceToken = async (agentId, token) => {
+const registerDeviceToken = async (userId, token) => {
   try {
-    await devicetoken.upsert({ agent_id: agentId, token });
+    await devicetoken.upsert({ user_id: userId, token });
     return token;
   } catch (error) {
     console.error("Error saving device token:", error);
@@ -32,9 +34,9 @@ const registerDeviceToken = async (agentId, token) => {
 };
 
 exports.sendNotification = async (req, res) => {
-  const { agent_id, title, body, data } = req.body;
+  const { user_id, title, body, data } = req.body;
   try {
-    const tokens = await getUserTokens(agent_id);
+    const tokens = await getUserTokens(user_id);
     console.log("Found tokens:", tokens);
     if (!tokens.length) {
       return res.status(400).json({ message: "No device tokens found for user" });
@@ -63,35 +65,43 @@ exports.assignOrder = async (req, res) => {
   try {
     const agents = await redisClient.hgetall("delivery_agents");
     let agentTokens = [];
-    for (let agentId in agents) {
-      const agentData = JSON.parse(agents[agentId]);
+    let agentAssignments = [];
+    for (let userId in agents) {
+      const agentData = JSON.parse(agents[userId]);
       if (agentData.status === "free") {
-        const tokens = await getUserTokens(agentId);
-        agentTokens.push(...tokens);
+        const tokens = await getUserTokens(userId);
+        if (tokens.length > 0) {
+          agentTokens.push(...tokens);
+          agentAssignments.push({
+            order_id: orderId,
+            agent_id: userId,
+            status: "pending",
+          });
+        }
       }
     }
     if (agentTokens.length === 0) {
       return res.status(404).json({ message: "No available agents" });
     }
-    const messages = agentTokens.map(token => ({
+    await orderAssignment.bulkCreate(agentAssignments);
+    const messages = agentTokens.map((token) => ({
       to: token,
       sound: "default",
       title: "New Delivery Request!",
       body: "Tap to accept or decline.",
-      data: { 
-        orderId, 
-        shopLat, 
+      data: {
+        orderId,
+        shopLat,
         shopLng,
-        type: 'NEW_ORDER'
-      }
+        type: "NEW_ORDER",
+      },
     }));
     console.log("Sending messages to agents:", messages);
     const result = await sendPushNotification(messages);
-
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Notifications sent to available agents.",
       sentTo: agentTokens.length,
-      result
+      result,
     });
   } catch (error) {
     console.error("Error sending notifications:", error);
@@ -99,10 +109,10 @@ exports.assignOrder = async (req, res) => {
   }
 };
 
-const getUserTokens = async (agentId) => {
+const getUserTokens = async (userId) => {
   try {
     const tokens = await devicetoken.findAll({
-      where: { agent_id: agentId },
+      where: { user_id: userId },
       attributes: ['token'],
       raw: true,
     });
@@ -114,10 +124,9 @@ const getUserTokens = async (agentId) => {
 };
 
 exports.acceptOrder = async (req, res) => {
-  const { agentId, orderId } = req.body;
-
+  const { userId, orderId } = req.body;
   try {
-    const agentData = await redisClient.hget("delivery_agents", agentId);
+    const agentData = await redisClient.hget("delivery_agents", userId);
     if (!agentData) {
       return res.status(404).json({ message: "Agent not found" });
     }
@@ -125,8 +134,18 @@ exports.acceptOrder = async (req, res) => {
     if (agent.status !== "free") {
       return res.status(400).json({ message: "Agent is already occupied" });
     }
+    const assignment = await orderAssignment.findOne({
+      where: { order_id: orderId, user_id: userId, status: "pending" },
+    });
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+    await assignment.update({ status: "accepted" });
     agent.status = "occupied";
-    res.status(200).json({ message: `Agent ${agentId} accepted the order and is now occupied` });
+    await redisClient.hset("delivery_agents", userId, JSON.stringify(agent));
+    res.status(200).json({
+      message: `Agent ${userId} accepted the order and is now occupied`,
+    });
   } catch (error) {
     console.error("Error accepting the order:", error);
     res.status(500).json({ error: "Failed to accept order" });
