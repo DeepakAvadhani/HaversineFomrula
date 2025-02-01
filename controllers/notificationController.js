@@ -151,3 +151,18 @@ exports.acceptOrder = async (req, res) => {
     res.status(500).json({ error: "Failed to accept order" });
   }
 };
+
+exports.getAgentStatus = async (req, res) => {
+  const { agentId } = req.query;
+  try {
+    const agentData = await redisClient.hget("delivery_agents", agentId);
+    if (!agentData) {
+      return res.status(404).json({ message: "Agent not found" });
+    }
+    const agent = JSON.parse(agentData);
+    res.status(200).json({ status: agent.status });
+  } catch (error) {
+    console.error("Error fetching agent status:", error);
+    res.status(500).json({ error: "Failed to get agent status" });
+  }
+};
