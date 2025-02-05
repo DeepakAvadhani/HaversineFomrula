@@ -1,45 +1,41 @@
-const { Model, DataTypes } = require('sequelize');
+const Sequelize = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
-module.exports = (sequelize) => {
-  class ZoneCoordinates extends Model {}
-
-  ZoneCoordinates.init(
+module.exports = function (sequelize, DataTypes) {
+  return sequelize.define(
+    "shop_zone",
     {
       id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: uuidv4,
         allowNull: false,
+        primaryKey: true,
       },
       zone_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         allowNull: false,
         references: {
-          model: 'map',
-          key: 'gid',
-          as:'zone'
+          model: "map",
+          key: "gid",
         },
       },
-      zone_name: {
-        type: DataTypes.STRING,
-        allowNull: true,
+      shop_id: {
+        type: DataTypes.UUID,
+        allowNull: false,
       },
       latitude: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.DOUBLE,
         allowNull: false,
       },
       longitude: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.DOUBLE,
         allowNull: false,
       },
     },
     {
       sequelize,
-      modelName: 'ZoneCoordinates',
-      tableName: 'zone_coordinates',
+      tableName: "shop_zone",
       timestamps: false,
     }
   );
-
-  return ZoneCoordinates;
 };

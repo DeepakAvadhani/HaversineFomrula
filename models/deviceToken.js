@@ -10,12 +10,6 @@ module.exports = (sequelize, DataTypes) => {
         user_id: {
           type: DataTypes.UUID,
           allowNull: false,
-          references: {
-            model: "user",
-            key: "id",
-          },
-          onDelete: "CASCADE",
-          onUpdate: "CASCADE",
         },
         token: {
           type: DataTypes.STRING,

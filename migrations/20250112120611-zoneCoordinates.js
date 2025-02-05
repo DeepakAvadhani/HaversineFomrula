@@ -1,34 +1,40 @@
-'use strict';
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('zone_coordinates', {
+    await queryInterface.createTable("shop_zone", {
       id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
+        type: Sequelize.UUID,
         allowNull: false,
+        primaryKey: true,
+        defaultValue: Sequelize.literal("uuid_generate_v4()"),
       },
       zone_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
+        allowNull: false,
+        references: {
+          model: "map",
+          key: "gid",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
+      },
+      shop_id: {
+        type: Sequelize.UUID,
         allowNull: false,
       },
-      zone_name: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
       latitude: {
-        type: Sequelize.FLOAT,
+        type: Sequelize.DOUBLE,
         allowNull: false,
       },
       longitude: {
-        type: Sequelize.FLOAT,
+        type: Sequelize.DOUBLE,
         allowNull: false,
       },
     });
   },
 
-  down: async (queryInterface) => {
-    await queryInterface.dropTable('zone_coordinates');
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable("shop_zone");
   },
 };
