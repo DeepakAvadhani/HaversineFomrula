@@ -94,3 +94,40 @@ exports.assignShopToZone = async (req, res) => {
   }
 };
 
+exports.getZoneByCoordinates = async (req, res) => {
+  const { latitude, longitude } = req.query;
+
+  if (!latitude || !longitude) {
+    return res.status(400).json({ error: "Latitude and longitude are required." });
+  }
+
+  try {
+    const query = `
+      SELECT gid,zone
+      FROM map
+      WHERE ST_Contains(
+        ST_Transform(geom, 32643),  -- Ensure geometry is in SRID 32643
+        ST_Transform(ST_SetSRID(ST_Point(:longitude, :latitude), 4326), 32643)  -- Convert point to SRID 32643
+      )
+      LIMIT 1;
+    `;
+
+    const result = await sequelize.query(query, {
+      replacements: { latitude, longitude },
+      type: QueryTypes.SELECT,
+    });
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No zone found for the given coordinates." });
+    }
+
+    return res.status(200).json({
+      message: "Zone found successfully",
+      zone_id: result[0].gid,
+      zone_name: result[0].zone
+    });
+  } catch (error) {
+    console.error("Error fetching zone by coordinates:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
