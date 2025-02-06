@@ -58,7 +58,6 @@ exports.assignShopToZone = async (req, res) => {
   }
 
   try {
-    // Ensure the point and geometry are in the same SRID (32643)
     const query = `
       SELECT gid
       FROM map
@@ -80,7 +79,6 @@ exports.assignShopToZone = async (req, res) => {
 
     const zone_id = result[0].gid;
 
-    // Insert shop-zone mapping into ZoneCoordinates (shop_zone)
     const shopZone = await ZoneCoordinates.create({
       shop_id,
       zone_id,
